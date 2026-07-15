@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /cart
+Disallow: /checkout
+Disallow: /auth
+Disallow: /wishlist
+Disallow: /admin
+Disallow: /orders
+
+Sitemap: https://wallistan.pk/sitemap.xml
