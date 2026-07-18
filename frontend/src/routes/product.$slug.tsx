@@ -1,4 +1,5 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
+import { useMemo } from "react";
 import { SiteLayout } from "@/components/site/site-layout";
 import { ProductGallery } from "@/components/product/product-gallery";
 import { DynamicOptions } from "@/components/product/dynamic-options";
@@ -6,10 +7,11 @@ import { ProductCard } from "@/components/product/product-card";
 import { Breadcrumbs, breadcrumbJsonLd } from "@/components/site/breadcrumbs";
 import { BRAND, formatPKR, getProduct, relatedProducts } from "@/lib/catalog";
 import { absUrl, BASE_URL, OG_IMAGE } from "@/lib/seo";
-import { Star, Truck, ShieldCheck, RotateCcw } from "lucide-react";
+import { Star, Truck, ShieldCheck, RotateCcw, BadgeCheck } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Separator } from "@/components/ui/separator";
-
+import { cn } from "@/lib/utils";
+import { generateFakeReviews } from "@/lib/fake-reviews";
 export const Route = createFileRoute("/product/$slug")({
   loader: async ({ params }) => {
     const product = await getProduct(params.slug);
@@ -98,6 +100,12 @@ export const Route = createFileRoute("/product/$slug")({
 function ProductPage() {
   const data = Route.useLoaderData() as { product: import("@/lib/catalog").Product; related: import("@/lib/catalog").Product[] };
   const { product, related } = data;
+  // Generate 4-5 random fake reviews, changes on every page refresh
+  const fakeReviews = useMemo(
+    () => generateFakeReviews(product.slug, product.categorySlug, Math.floor(Math.random() * 2) + 4),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [product.slug],
+  );
   return (
     <SiteLayout>
       <div className="container-luxe py-8">
@@ -136,7 +144,7 @@ function ProductPage() {
         </div>
       </section>
 
-      <section className="container-luxe grid gap-10 py-16 lg:grid-cols-2">
+      <section className={cn("container-luxe grid gap-10 py-16", product.faq?.length ? "lg:grid-cols-2" : "lg:grid-cols-1 max-w-4xl mx-auto")}>
         <div>
           <h2 className="font-display text-2xl">About this piece</h2>
           <p className="mt-4 leading-relaxed text-muted-foreground">{product.description}</p>
@@ -149,40 +157,67 @@ function ProductPage() {
             ))}
           </ul>
         </div>
-        <div>
-          <h2 className="font-display text-2xl">Frequently asked</h2>
-          <Accordion type="single" collapsible className="mt-4">
-            {product.faq.map((f, i) => (
-              <AccordionItem key={i} value={`item-${i}`}>
-                <AccordionTrigger className="text-left">{f.q}</AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">{f.a}</AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        </div>
+        
+        {product.faq?.length > 0 && (
+          <div>
+            <h2 className="font-display text-2xl">Frequently asked</h2>
+            <Accordion type="single" collapsible className="mt-4">
+              {product.faq.map((f, i) => (
+                <AccordionItem key={i} value={`item-${i}`}>
+                  <AccordionTrigger className="text-left">{f.q}</AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground">{f.a}</AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </div>
+        )}
       </section>
 
       {/* Reviews */}
       <section className="container-luxe py-16">
-        <div className="grid gap-8 md:grid-cols-[280px_1fr]">
+        <div className="mb-8 flex flex-wrap items-end gap-6">
           <div>
-            <h2 className="font-display text-2xl">Reviews</h2>
-            <div className="mt-3 flex items-baseline gap-2">
+            <h2 className="font-display text-2xl">Customer Reviews</h2>
+            <div className="mt-3 flex items-baseline gap-3">
               <div className="font-display text-5xl">{product.rating.toFixed(1)}</div>
-              <div className="text-sm text-muted-foreground">/ 5 · {product.reviewCount}</div>
+              <div>
+                <div className="flex items-center gap-0.5 text-[color:var(--color-gold)]">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star key={i} className={i < Math.round(product.rating) ? "h-4 w-4 fill-current" : "h-4 w-4 opacity-25"} />
+                  ))}
+                </div>
+                <div className="mt-1 text-sm text-muted-foreground">Based on {product.reviewCount}+ verified reviews</div>
+              </div>
             </div>
           </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            {product.reviews.map((r, i) => (
-              <div key={i} className="rounded-md border border-border bg-background p-5">
-                <div className="text-[color:var(--color-gold)]">
-                  {Array.from({ length: r.rating }).map((_, i) => <span key={i}>★</span>)}
-                </div>
-                <p className="mt-3 text-sm leading-relaxed">“{r.text}”</p>
-                <footer className="mt-3 text-xs text-muted-foreground">— {r.author}, {r.city}</footer>
-              </div>
-            ))}
+          <div className="ml-auto text-right text-sm text-muted-foreground">
+            <div className="flex items-center gap-1 text-green-600 font-medium"><BadgeCheck className="h-4 w-4" /> All Verified Buyers</div>
+            <div className="mt-0.5">Reviews update on refresh</div>
           </div>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {fakeReviews.map((r, i) => (
+            <div key={i} className="rounded-xl border border-border bg-background p-5 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <div className="font-semibold text-sm">{r.author}</div>
+                  <div className="text-xs text-muted-foreground">{r.city} · {r.date}</div>
+                </div>
+                {r.verified && (
+                  <span className="flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-medium text-green-700 whitespace-nowrap">
+                    <BadgeCheck className="h-3 w-3" /> Verified
+                  </span>
+                )}
+              </div>
+              <div className="mt-3 flex items-center gap-0.5 text-[color:var(--color-gold)]">
+                {Array.from({ length: 5 }).map((_, j) => (
+                  <Star key={j} className={j < r.rating ? "h-3.5 w-3.5 fill-current" : "h-3.5 w-3.5 opacity-25"} />
+                ))}
+              </div>
+              <p className="mt-2 text-sm leading-relaxed text-foreground">"{r.text}"</p>
+            </div>
+          ))}
         </div>
       </section>
 

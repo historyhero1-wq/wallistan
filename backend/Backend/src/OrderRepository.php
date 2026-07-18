@@ -174,10 +174,13 @@ class OrderRepository
 
     private function nextOrderNumber(): string
     {
-        $stmt = $this->db->query('SELECT MAX(id) AS max_id FROM orders');
-        $row = $stmt->fetch();
-        $next = ((int) ($row['max_id'] ?? 0)) + 1001;
-        return (string) $next;
+        // Generate a unique random order number like WAL-472831
+        do {
+            $num = 'WAL-' . str_pad((string) random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
+            $exists = $this->db->prepare('SELECT id FROM orders WHERE order_number = ?');
+            $exists->execute([$num]);
+        } while ($exists->fetch());
+        return $num;
     }
 
     private function splitName(string $fullName): array

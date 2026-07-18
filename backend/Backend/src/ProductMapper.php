@@ -128,13 +128,16 @@ class ProductMapper
         $regular = $row['regular_price'] !== null ? (int) round((float) $row['regular_price']) : null;
 
         $result = [
-            'id' => (int) $row['id'],
-            'price' => $price,
+            'id'         => (int) $row['id'],
+            'price'      => $price,
             'attributes' => json_decode($row['attributes'], true) ?: [],
-            'inStock' => (int) $row['in_stock'] === 1,
+            'inStock'    => (int) $row['in_stock'] === 1,
         ];
 
-        if ($regular && $regular > $price) {
+        if ($regular !== null && $regular > 0) {
+            // regular_price is the "Cut Price" (original before discount)
+            // price is the "Final Price" (what customer pays)
+            // Always pass both so frontend can display the strikethrough
             $result['regularPrice'] = $regular;
         }
         if (!empty($row['image'])) {

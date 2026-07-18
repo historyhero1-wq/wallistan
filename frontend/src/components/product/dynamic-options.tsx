@@ -126,18 +126,22 @@ export function DynamicOptions({ product }: { product: Product }) {
   }
 
   const displayPrice = matchedVariation?.price ?? product.basePrice + unitExtras;
+  // regularPrice = Cut Price (the higher "original" price with strikethrough)
+  // price = Final Price (the actual sale price customer pays)
   const displayCompareAt = matchedVariation?.regularPrice ?? product.compareAtPrice;
+  // Show the cut price if it exists and is different from the sale price
+  const hasCutPrice = displayCompareAt != null && displayCompareAt > 0 && displayCompareAt !== displayPrice;
 
   return (
     <div className="space-y-6">
       <div className="mt-4 flex flex-wrap items-baseline gap-3">
-        {displayCompareAt && displayCompareAt > displayPrice ? (
+        {hasCutPrice ? (
           <>
-            <div className="text-xl text-muted-foreground line-through decoration-1">{formatPKR(displayCompareAt)}</div>
+            <div className="text-xl text-muted-foreground line-through decoration-1">{formatPKR(displayCompareAt!)}</div>
             <div className="font-display text-3xl text-red-600 font-bold">{formatPKR(displayPrice)}</div>
             <div className="flex items-center gap-1 text-xs font-bold text-white ml-2">
               <span className="bg-zinc-800 px-2 py-1 rounded-sm tracking-wider">OFF</span>
-              <span className="bg-zinc-800 px-2 py-1 rounded-sm">-{Math.round((1 - displayPrice / displayCompareAt) * 100)}%</span>
+              <span className="bg-zinc-800 px-2 py-1 rounded-sm">-{Math.round(Math.abs((displayPrice - displayCompareAt!) / displayCompareAt!) * 100)}%</span>
             </div>
           </>
         ) : (

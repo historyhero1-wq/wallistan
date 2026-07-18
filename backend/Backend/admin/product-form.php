@@ -637,11 +637,11 @@ function generateVariations() {
         <input type="hidden" name="var_attr[]" value='${attrStr.replace(/'/g, "&#39;")}'>
       </div>
       <div class="field" style="margin:0;width:100px;">
-        <label style="font-size:0.75rem;margin-bottom:0.25rem;">Price</label>
-        <input type="number" name="var_regular_price[]" value="${existing.regPrice}" min="0" placeholder="e.g. 100">
+        <label style="font-size:0.75rem;margin-bottom:0.25rem;">Cut Price</label>
+        <input type="number" name="var_regular_price[]" value="${existing.regPrice}" min="0" placeholder="e.g. 200">
       </div>
       <div class="field" style="margin:0;width:100px;">
-        <label style="font-size:0.75rem;margin-bottom:0.25rem;">Sale Price</label>
+        <label style="font-size:0.75rem;margin-bottom:0.25rem;">Final Price</label>
         <input type="number" name="var_price[]" value="${existing.price}" min="0">
       </div>
       <div class="field var-stock-col" style="margin:0;width:80px;">
