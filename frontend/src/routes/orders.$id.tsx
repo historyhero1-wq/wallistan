@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { WooOrderDetail } from "@/integrations/woocommerce/types";
+import { api } from "@/lib/api";
 
 const searchSchema = z.object({
   email: z.string().optional(),
@@ -38,12 +39,9 @@ function OrderDetail() {
     queryKey: ["order", id, email],
     queryFn: async () => {
       if (!email.trim()) return null;
-      const res = await fetch(
-        `/api/wallistan/orders/${id}?email=${encodeURIComponent(email.trim())}`,
+      return await api.get<WooOrderDetail>(
+        `/orders/${id}?email=${encodeURIComponent(email.trim())}`,
       );
-      const payload = (await res.json()) as WooOrderDetail & { error?: string };
-      if (!res.ok) throw new Error(payload.error ?? "Order not found");
-      return payload;
     },
     enabled: !!email.trim(),
     retry: false,
@@ -54,18 +52,12 @@ function OrderDetail() {
     if (!email.trim()) return;
     setBusy(true);
     try {
-      const res = await fetch(`/api/wallistan/orders/${id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: email.trim(),
-          method,
-          reference: ref,
-          message,
-        }),
+      await api.post(`/orders/${id}`, {
+        email: email.trim(),
+        method,
+        reference: ref,
+        message,
       });
-      const payload = (await res.json()) as { error?: string };
-      if (!res.ok) throw new Error(payload.error ?? "Could not submit");
       toast.success("Payment details submitted — we'll verify within 24h.");
       setRef("");
       setMessage("");

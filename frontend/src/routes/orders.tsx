@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { listSavedOrders, saveOrder, type SavedOrder } from "@/lib/order-history";
 import type { WooOrderDetail } from "@/integrations/woocommerce/types";
+import { api } from "@/lib/api";
 
 export const Route = createFileRoute("/orders")({
   head: () => ({
@@ -22,11 +23,13 @@ export const Route = createFileRoute("/orders")({
 });
 
 async function fetchOrderSummary(saved: SavedOrder): Promise<WooOrderDetail | null> {
-  const res = await fetch(
-    `/api/wallistan/orders/${saved.id}?email=${encodeURIComponent(saved.email)}`,
-  );
-  if (!res.ok) return null;
-  return res.json() as Promise<WooOrderDetail>;
+  try {
+    return await api.get<WooOrderDetail>(
+      `/orders/${saved.id}?email=${encodeURIComponent(saved.email)}`,
+    );
+  } catch {
+    return null;
+  }
 }
 
 function OrdersPage() {
@@ -49,11 +52,9 @@ function OrdersPage() {
     e.preventDefault();
     setLookupBusy(true);
     try {
-      const res = await fetch(
-        `/api/wallistan/orders/lookup?number=${encodeURIComponent(lookupNumber)}&email=${encodeURIComponent(lookupEmail)}`,
+      const payload = await api.get<WooOrderDetail>(
+        `/orders/lookup?number=${encodeURIComponent(lookupNumber)}&email=${encodeURIComponent(lookupEmail)}`,
       );
-      const payload = (await res.json()) as WooOrderDetail & { error?: string };
-      if (!res.ok) throw new Error(payload.error ?? "Order not found");
 
       const entry: SavedOrder = {
         id: payload.id,

@@ -5,6 +5,7 @@ import catNeon from "@/assets/cat-neon.jpg";
 import catAcrylic from "@/assets/cat-acrylic.jpg";
 import catShop from "@/assets/cat-shop.jpg";
 import catDecor from "@/assets/cat-decor.jpg";
+import { api } from "@/lib/api";
 
 export type OptionField =
   | {
@@ -157,9 +158,7 @@ const BLOG: {
 
 async function fetchWoo<T>(path: string): Promise<T | null> {
   try {
-    const res = await fetch(path);
-    if (!res.ok) return null;
-    return (await res.json()) as T;
+    return await api.get<T>(path);
   } catch {
     return null;
   }
@@ -194,12 +193,7 @@ export async function listCategories(): Promise<Category[]> {
   try {
     const { isWallistanEnabled } = await import("@/integrations/wallistan/config");
     if (isWallistanEnabled()) {
-      if (import.meta.env.SSR) {
-        const { listCategoriesFromPhp } = await import("@/integrations/wallistan/catalog.server");
-        return await listCategoriesFromPhp();
-      }
-      const data = await fetchWoo<Category[]>("/api/wallistan/categories");
-      return data ?? [];
+      return await api.get<Category[]>("/categories");
     }
   } catch (error) {
     console.error("[catalog] Wallistan categories failed:", error);
@@ -233,12 +227,7 @@ export async function listProducts(): Promise<Product[]> {
   try {
     const { isWallistanEnabled } = await import("@/integrations/wallistan/config");
     if (isWallistanEnabled()) {
-      if (import.meta.env.SSR) {
-        const { listProductsFromPhp } = await import("@/integrations/wallistan/catalog.server");
-        return await listProductsFromPhp();
-      }
-      const data = await fetchWoo<Product[]>("/api/wallistan/products");
-      return data ?? [];
+      return await api.get<Product[]>('/products');
     }
   } catch (error) {
     console.error("[catalog] Wallistan products failed:", error);
@@ -272,12 +261,7 @@ export async function getProduct(slug: string): Promise<Product | undefined> {
   try {
     const { isWallistanEnabled } = await import("@/integrations/wallistan/config");
     if (isWallistanEnabled()) {
-      if (import.meta.env.SSR) {
-        const { getProductFromPhp } = await import("@/integrations/wallistan/catalog.server");
-        return await getProductFromPhp(slug);
-      }
-      const product = await fetchWoo<Product>(`/api/wallistan/product/${encodeURIComponent(slug)}`);
-      return product ?? undefined;
+      return await api.get<Product>(`/products/${encodeURIComponent(slug)}`);
     }
   } catch (error) {
     console.error("[catalog] Wallistan product failed:", error);

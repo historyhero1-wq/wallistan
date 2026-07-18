@@ -11,6 +11,7 @@ import { BRAND, formatPKR } from "@/lib/catalog";
 import { findCoupon, couponDiscount, type Coupon } from "@/lib/coupons";
 import { isWallistanEnabled } from "@/integrations/wallistan/config";
 import { saveOrder } from "@/lib/order-history";
+import { api } from "@/lib/api";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({
@@ -58,33 +59,26 @@ function Checkout() {
         ? `${f.notes}\n[Coupon: ${coupon.code} — ${formatPKR(discount)} off]`.trim()
         : f.notes;
 
-      const res = await fetch("/api/wallistan/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contactName: f.name,
-          contactPhone: f.phone,
-          contactEmail: f.email,
-          shippingAddress: f.address,
-          shippingCity: f.city,
-          notes: notesWithCoupon,
-          paymentMethod: f.method,
-          subtotal,
-          discount,
-          shippingFee: shipping,
-          total,
-          couponCode: coupon?.code,
-          items,
-        }),
-      });
-
-      const payload = (await res.json()) as {
+      const payload = await api.post<{
         orderId?: number;
         orderNumber?: string;
         email?: string;
         error?: string;
-      };
-      if (!res.ok) throw new Error(payload.error ?? "Could not place order");
+      }>("/orders", {
+        contactName: f.name,
+        contactPhone: f.phone,
+        contactEmail: f.email,
+        shippingAddress: f.address,
+        shippingCity: f.city,
+        notes: notesWithCoupon,
+        paymentMethod: f.method,
+        subtotal,
+        discount,
+        shippingFee: shipping,
+        total,
+        couponCode: coupon?.code,
+        items,
+      });
 
       saveOrder({
         id: payload.orderId!,

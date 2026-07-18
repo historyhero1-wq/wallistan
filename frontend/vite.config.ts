@@ -6,10 +6,12 @@ import tsConfigPaths from "vite-tsconfig-paths";
 import { nitro } from "nitro/vite";
 
 export default defineConfig(({ command, mode }) => {
-  const loadedEnv = loadEnv(mode, process.cwd(), "VITE_");
+  const loadedEnv = loadEnv(mode, process.cwd(), "");
   const envDefine: Record<string, string> = {};
   for (const [key, value] of Object.entries(loadedEnv)) {
-    envDefine[`import.meta.env.${key}`] = JSON.stringify(value);
+    if (key.startsWith("VITE_") || key === "STORE_API_URL") {
+      envDefine[`import.meta.env.${key}`] = JSON.stringify(value);
+    }
   }
 
   return {
