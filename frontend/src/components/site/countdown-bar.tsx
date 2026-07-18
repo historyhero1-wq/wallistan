@@ -13,10 +13,16 @@ function nextSaleEnd(): number {
 }
 
 export function CountdownBar() {
-  const [target] = useState<number>(() => nextSaleEnd());
-  const [now, setNow] = useState<number>(() => Date.now());
+  const [mounted, setMounted] = useState(false);
+  const [target, setTarget] = useState<number>(0);
+  const [now, setNow] = useState<number>(0);
 
   useEffect(() => {
+    setMounted(true);
+    const nextTarget = nextSaleEnd();
+    setTarget(nextTarget);
+    setNow(Date.now());
+
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
@@ -32,13 +38,19 @@ export function CountdownBar() {
       <div className="container-luxe flex flex-wrap items-center justify-center gap-x-4 gap-y-1 py-2 text-[11px] uppercase tracking-[0.2em] sm:text-xs">
         <span className="opacity-80">⏱ Weekly Sale Ends In</span>
         <span className="flex items-center gap-1.5 font-mono font-semibold text-[color:var(--color-gold)]">
-          <Chunk n={d} label="d" />
-          <span aria-hidden>:</span>
-          <Chunk n={h} label="h" />
-          <span aria-hidden>:</span>
-          <Chunk n={m} label="m" />
-          <span aria-hidden>:</span>
-          <Chunk n={s} label="s" />
+          {mounted ? (
+            <>
+              <Chunk n={d} label="d" />
+              <span aria-hidden>:</span>
+              <Chunk n={h} label="h" />
+              <span aria-hidden>:</span>
+              <Chunk n={m} label="m" />
+              <span aria-hidden>:</span>
+              <Chunk n={s} label="s" />
+            </>
+          ) : (
+            <span>00:00:00:00</span>
+          )}
         </span>
         <Link
           to="/shop"

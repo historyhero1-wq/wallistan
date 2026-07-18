@@ -1,5 +1,7 @@
-// Catalog data adapter — products and categories from WooCommerce or the
-// Wallistan custom PHP backend (whichever is configured).
+// Catalog data adapter — products and categories are loaded from the Wallistan
+// PHP backend when STORE_API_URL is available. WooCommerce support is limited to
+// server-side SSR integration only and must not use frontend /api/woocommerce proxy
+// routes in production preview builds.
 
 import catNeon from "@/assets/cat-neon.jpg";
 import catAcrylic from "@/assets/cat-acrylic.jpg";
@@ -156,14 +158,6 @@ const BLOG: {
   },
 ];
 
-async function fetchWoo<T>(path: string): Promise<T | null> {
-  try {
-    return await api.get<T>(path);
-  } catch {
-    return null;
-  }
-}
-
 export function resolveVariation(product: Product, selectedOptions: Record<string, string>): ProductVariation | undefined {
   if (!product.variations?.length) return undefined;
   const entries = Object.entries(selectedOptions).filter(([, v]) => v);
@@ -174,22 +168,6 @@ export function resolveVariation(product: Product, selectedOptions: Record<strin
 }
 
 export async function listCategories(): Promise<Category[]> {
-  // ── WooCommerce ──────────────────────────────────────────────────────────
-  try {
-    const { isWooCommerceEnabled } = await import("@/integrations/woocommerce/config");
-    if (isWooCommerceEnabled()) {
-      if (import.meta.env.SSR) {
-        const { listCategoriesFromWoo } = await import("@/integrations/woocommerce/catalog.server");
-        return await listCategoriesFromWoo();
-      }
-      const data = await fetchWoo<Category[]>("/api/woocommerce/categories");
-      return data ?? [];
-    }
-  } catch (error) {
-    console.error("[catalog] WooCommerce categories failed:", error);
-  }
-
-  // ── Wallistan PHP backend ────────────────────────────────────────────────
   try {
     const { isWallistanEnabled } = await import("@/integrations/wallistan/config");
     if (isWallistanEnabled()) {
@@ -208,22 +186,6 @@ export async function getCategory(slug: string): Promise<Category | undefined> {
 }
 
 export async function listProducts(): Promise<Product[]> {
-  // ── WooCommerce ──────────────────────────────────────────────────────────
-  try {
-    const { isWooCommerceEnabled } = await import("@/integrations/woocommerce/config");
-    if (isWooCommerceEnabled()) {
-      if (import.meta.env.SSR) {
-        const { listProductsFromWoo } = await import("@/integrations/woocommerce/catalog.server");
-        return await listProductsFromWoo();
-      }
-      const data = await fetchWoo<Product[]>("/api/woocommerce/products");
-      return data ?? [];
-    }
-  } catch (error) {
-    console.error("[catalog] WooCommerce products failed:", error);
-  }
-
-  // ── Wallistan PHP backend ────────────────────────────────────────────────
   try {
     const { isWallistanEnabled } = await import("@/integrations/wallistan/config");
     if (isWallistanEnabled()) {
@@ -242,22 +204,6 @@ export async function listProductsByCategory(categorySlug: string): Promise<Prod
 }
 
 export async function getProduct(slug: string): Promise<Product | undefined> {
-  // ── WooCommerce ──────────────────────────────────────────────────────────
-  try {
-    const { isWooCommerceEnabled } = await import("@/integrations/woocommerce/config");
-    if (isWooCommerceEnabled()) {
-      if (import.meta.env.SSR) {
-        const { getProductFromWoo } = await import("@/integrations/woocommerce/catalog.server");
-        return await getProductFromWoo(slug);
-      }
-      const product = await fetchWoo<Product>(`/api/woocommerce/product/${encodeURIComponent(slug)}`);
-      return product ?? undefined;
-    }
-  } catch (error) {
-    console.error("[catalog] WooCommerce product failed:", error);
-  }
-
-  // ── Wallistan PHP backend ────────────────────────────────────────────────
   try {
     const { isWallistanEnabled } = await import("@/integrations/wallistan/config");
     if (isWallistanEnabled()) {

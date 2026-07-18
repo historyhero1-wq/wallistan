@@ -102,9 +102,8 @@ function ProductPage() {
   const { product, related } = data;
   // Generate 4-5 random fake reviews, changes on every page refresh
   const fakeReviews = useMemo(
-    () => generateFakeReviews(product.slug, product.categorySlug, Math.floor(Math.random() * 2) + 4),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [product.slug],
+    () => generateFakeReviews(product.slug, product.categorySlug, 4),
+    [product.slug, product.categorySlug],
   );
   return (
     <SiteLayout>
